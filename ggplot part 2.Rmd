@@ -1,0 +1,108 @@
+---
+  title: "Vizualizatipn and EDA Part 2"
+author: "Olya Besedina"
+data: "10/01/2019"
+output: github_document
+---
+  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(ggridges)
+library(patchwork)
+```
+
+```{r load data, cache=TRUE}
+weather_df = 
+  rnoaa::meteo_pull_monitors(c("USW00094728", "USC00519397", "USS0023B17S"),
+                      var = c("PRCP", "TMIN", "TMAX"), 
+                      date_min = "2017-01-01",
+                      date_max = "2017-12-31") %>%
+  mutate(
+    name = recode(id, USW00094728 = "CentralPark_NY", 
+                      USC00519397 = "Waikiki_HA",
+                      USS0023B17S = "Waterhole_WA"),
+    tmin = tmin / 10,
+    tmax = tmax / 10) %>%
+  select(name, id, everything())
+```
+
+# making new plots
+Add labels
+```{r}
+weather_df %>% 
+  ggplot(aes(x = tmin, y = tmax, color = name))+
+  geom_point(alpha = .5) +
+  labs (
+    title = "Temperature plot",
+    x = "Min temp",
+    y = "Max temp",
+    caption = "Data from NOAA via rnoaa pachage"
+  )
+```
+
+x axis adn y axis 
+
+```{r}
+weather_df %>% 
+  ggplot(aes(x = tmin, y = tmax)) + 
+  geom_point(aes(color = name), alpha = .5) + 
+  labs(
+    title = "Temperature plot",
+    x = "Minimum daily temperature (C)",
+    y = "Maxiumum daily temperature (C)",
+    caption = "Data from the rnoaa package") + 
+  scale_x_continuous(
+    breaks = c(-15, 0, 15), 
+    labels = c("-15º C", "0", "15"))+
+  scale_y_continuous(
+    trans = "sqrt",
+    position = "right"
+  )
+```
+
+
+## colors and other plot details
+```{r}
+ggp_base = weather_df %>% 
+  ggplot(aes(x = tmin, y = tmax)) + 
+  geom_point(aes(color = name), alpha = .5) + 
+  labs(
+    title = "Temperature plot",
+    x = "Minimum daily temperature (C)",
+    y = "Maxiumum daily temperature (C)",
+    caption = "Data from the rnoaa package") +
+  viridis::scale_color_viridis(
+    name = "Location", 
+    discrete = TRUE
+  )
+```
+
+## Themes
+```{r}
+ggp_base +
+  theme_bw() +
+  theme(legend.position = "bottom")
+```
+
+Minimal theme must be on the top before other themes 
+
+```{r}
+ggp_base +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+(Where do my warnings come from?)
+```{r}
+weather_df %>% 
+  filter(is.na(tmin))
+```
+
+
+
+
+
+
+
