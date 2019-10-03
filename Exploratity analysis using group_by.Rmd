@@ -11,14 +11,6 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(viridis)
 
-knitr::opts_chunk$set(
-  echo = TRUE,
-  warning = FALSE,
-  fig.width = 8
-  fig.height = 6,
-  out.width = "90%"
-)
-
 # copy the rest from github
 
 
@@ -87,4 +79,133 @@ weather_df %>%
   pull(name) %>% 
   table()
 ```
+
+# make a nice table for knited document
+
+```{r}
+weather_df %>% 
+  count(name) %>% 
+  knitr::kable()
+```
+
+## 2x2 table
+a digression
+
+Not the best way to do it
+```{r}
+weather_df %>% 
+  filter(name != "Waikiki_HA") %>% 
+  mutate(
+    cold = case_when(
+      tmax < 5 ~ "cold",
+      tmax >= 5 ~ "not cold",
+      TRUE    ~""
+    )
+  ) %>% 
+  group_by(name, cold) %>% 
+  count() %>% 
+  pivot_wider (cold,
+  values_from = n)
+```
+
+~ shows outcome
+
+```{r}
+weather_df %>% 
+  filter(name != "Waikiki_HA") %>% 
+  mutate(
+    cold = case_when(
+      tmax < 5 ~ "cold",
+      tmax >= 5 ~ "not cold",
+      TRUE    ~""
+    )
+  ) %>% 
+  janitor::tabyl(name, cold)
+```
+
+
+Do logistic regression instead of 2x2 table
+
+## general summaries 
+
+```{r}
+weather_df %>% 
+  group_by(name, month) %>% 
+  summarize(
+    n = n(),
+    mean_tmax = mean(tmax, na.rm = TRUE),
+    sd_tmax = sd(tmax, na.rm = TRUE),
+    median_prcp = median(prcp, na.rm = TRUE)
+  )
+
+```
+
+na.rm = TRUE, if there is NA then drop it
+
+
+```{r}
+weather_df %>% 
+  group_by(name, month) %>% 
+  summarize(
+    n = n(),
+    mean_tmax = mean(tmax, na.rm = TRUE)) %>% 
+  pivot_wider(
+    names_from = name,
+    values_from = mean_tmax
+  ) %>% 
+  knitr::kable(digits = 1)
+```
+
+
+  knitr::kable(digits = 1), only show one decimal in mean
+
+# group mutates
+
+```{r}
+weather_df %>% 
+  group_by(name) %>%
+  ungroup()
+```
+
+# mutate per group
+```{r}
+weather_df %>% 
+  group_by(name) %>% 
+  mutate(
+    mean_tmax = mean(tmax, na.rm = TRUE),
+    center_tmax = tmax - mean_tmax) %>% 
+  ggplot(aes(x = date, y = center_tmax, color = name))+
+  geom_point()
+```
+
+
+```{r}
+weather_df %>%
+  group_by(name, month) %>%
+  mutate(
+    tmax_rank = min_rank(tmax)) %>% 
+  filter(tmax_rank == 1) %>% 
+  view()
+  
+```
+
+lags and leads
+
+lag function will show you value from previous day
+```{r}
+weather_df %>%
+  group_by(name) %>%
+  mutate(temp_change = tmax - lag(tmax)) %>%
+  summarize(temp_change_sd = sd(temp_change, na.rm = TRUE),
+            temp_change_max = max(temp_change, na.rm = TRUE))
+
+```
+
+
+
+
+
+
+
+
 
