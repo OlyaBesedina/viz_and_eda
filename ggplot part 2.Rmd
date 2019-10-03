@@ -100,6 +100,146 @@ weather_df %>%
   filter(is.na(tmin))
 ```
 
+## more than one data set
+```{r}
+central_park = 
+  weather_df %>% 
+  filter(name == "CentralPark_NY")
+
+waikiki = 
+  weather_df %>% 
+  filter(name == "Waikiki_HA")
+
+ggplot(data = waikiki, aes(x = date, y = tmax, color = name))+
+  geom_point() +
+  geom_line(data = central_park)
+```
+
+
+(Brief aside about colors)
+```{r}
+waikiki %>% 
+  ggplot(aes(x = date, y = tmax)) +
+  geom_point(alpha = .5, color = "blue")
+  
+```
+
+
+## Multi-panel plots
+
+```{r}
+# devtools::install_github("thomasp85/patchwork")
+ggp_scatter = 
+  weather_df %>% 
+  ggplot(aes(x = tmin, y = tmax))+
+  geom_point()
+
+ggp_density =
+  weather_df %>% 
+  ggplot(aes(x = tmin))+ 
+  geom_density()
+
+ggp_box = 
+  weather_df %>% 
+  ggplot(aes(x = name, y = tmax, color = name))+
+  geom_boxplot()
+
+ggp_scatter + (ggp_density + ggp_box)
+```
+
+
+## Data manipulation
+
+Change order
+
+```{r}
+weather_df %>% 
+  mutate(
+    name = factor(name),
+    name = fct_relevel(name, "Waikiki_HA", "CentralPark_NY")
+  ) %>% 
+  ggplot(aes(x = name, y = tmax, color = name))+
+  geom_boxplot()
+```
+
+
+reorder in sntead of relevel
+
+```{r}
+weather_df %>% 
+  mutate(
+    name = factor(name),
+    name = fct_reorder(name, tmax)
+  ) %>% 
+  ggplot(aes(x = name, y = tmax, color = name))+
+  geom_boxplot()
+```
+
+
+```{r}
+weather_df %>% 
+  mutate(
+    name = factor(name),
+    name = fct_relevel(name, "Waikiki_HA", "CentralPark_NY")
+  )
+  ggplot(aes(x = tmin, y = tmax, color = name))+
+  geom_point
+
+```
+
+
+## Restructure then plot
+
+```{r}
+weather_df %>% 
+  pivot_longer(
+    tmax:tmin,
+    names_to = "observation",
+    values_to = "temp"
+  )%>% 
+  ggplot(aes(x = temp, fill = observation))+
+  geom_density(alpha = .5)+
+  facet_grid(~name) +
+  theme (legend.position = "bottom")
+  viridis::scale_fill_viridis(discrete = TRUE)
+
+```
+
+```{r}
+
+pup_data = 
+  read_csv("./data/FAS_pups.csv", col_types = "ciiiii") %>%
+  janitor::clean_names() %>%
+  mutate(sex = recode(sex, `1` = "male", `2` = "female")) 
+
+litter_data = 
+  read_csv("./data/FAS_litters.csv", col_types = "ccddiiii") %>%
+  janitor::clean_names() %>%
+  select(-pups_survive) %>%
+  separate(group, into = c("dose", "day_of_tx"), sep = 3) %>%
+  mutate(wt_gain = gd18_weight - gd0_weight,
+         day_of_tx = as.numeric(day_of_tx))
+
+fas_data = left_join(pup_data, litter_data, by = "litter_number") 
+
+fas_data %>% 
+  select(sex, dose, day_of_tx, pd_ears:pd_walk) %>% 
+  pivot_longer(
+    pd_ears:pd_walk,
+    names_to = "outcome", 
+    values_to = "pn_day") %>% 
+  drop_na(dose, day_of_tx, pn_day) %>% 
+  mutate(
+    outcome = forcats::fct_reorder(outcome, day_of_tx, median)) %>% 
+  ggplot(aes(x = dose, y = pn_day)) + 
+  geom_violin() +
+  facet_grid(day_of_tx ~ outcome)
+```
+
+
+
+
+
 
 
 

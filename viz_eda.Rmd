@@ -1,5 +1,5 @@
 ---
-title: "Data Import"
+title: "Vizualization and EDA"
 author: "Olya Besedina"
 data: "9/17/2019"
 output: github_document
@@ -139,4 +139,3 @@ weather_df %>%
   ggplot(aes(x = name, y = tmax))+
   geom_violin()
 ```
-
